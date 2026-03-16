@@ -2,31 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+
+  <!-- ═══ PWA META ═══════════════════════════════════════════════ -->
+  <title>IST ↔ US Time</title>
+  <meta name="description" content="Convert time between India (IST) and US timezones EST, CST, PST with automatic DST support. Works offline."/>
+  <meta name="application-name" content="IST ↔ US Time"/>
   <meta name="theme-color" content="#0a0c14"/>
-  <title>IST ↔ US Time Converter</title>
+  <meta name="mobile-web-app-capable" content="yes"/>
+
+  <!-- Apple PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Time Zone"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png"/>
+
+  <!-- Apple Splash Screens (covers most iPhones) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json"/>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
+  <link rel="shortcut icon" href="icons/icon-192.png"/>
+
+  <!-- Microsoft Tiles -->
+  <meta name="msapplication-TileColor" content="#0a0c14"/>
+  <meta name="msapplication-TileImage" content="icons/icon-144.png"/>
+
+  <!-- Open Graph (for sharing) -->
+  <meta property="og:title" content="IST ↔ US Time Converter"/>
+  <meta property="og:description" content="Convert India time to EST, CST, PST with DST support. Free, fast, works offline."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:image" content="icons/icon-512.png"/>
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0c14;
-      --surface: #111520;
+      --bg:       #0a0c14;
+      --surface:  #111520;
       --surface2: #181d2e;
-      --border: #252b40;
-      --accent: #f0b429;
-      --accent3: #5ce0b8;
-      --text: #e8eaf2;
-      --muted: #6b7280;
-      --ist: #f0b429;
-      --est: #5ce0b8;
-      --cst: #7c9cff;
-      --pst: #e05c5c;
-
-      /* Touch-friendly sizing */
-      --touch-min: 48px;
-      --radius: 14px;
-      --radius-sm: 10px;
+      --border:   #252b40;
+      --accent:   #f0b429;
+      --accent3:  #5ce0b8;
+      --text:     #e8eaf2;
+      --muted:    #6b7280;
+      --ist:      #f0b429;
+      --est:      #5ce0b8;
+      --cst:      #7c9cff;
+      --pst:      #e05c5c;
+      --radius:   14px;
+      --tap:      48px;
     }
 
     html { -webkit-text-size-adjust: 100%; }
@@ -35,447 +68,316 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'Syne', sans-serif;
-      min-height: 100vh;
       min-height: 100dvh;
-      padding: 0;
-      overflow-x: hidden;
+      padding: max(1.25rem, env(safe-area-inset-top)) 1rem
+               env(safe-area-inset-bottom, 1.5rem);
     }
 
-    /* Grid bg */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image:
         linear-gradient(rgba(240,180,41,0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(240,180,41,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
+      background-size: 48px 48px;
+      pointer-events: none; z-index: 0;
     }
 
-    .page {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 720px;
+    .wrapper {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 680px;
       margin: 0 auto;
-      padding: 1.25rem 1rem 5rem;
+      padding-bottom: 2rem;
     }
 
-    /* ── Header ── */
-    header {
-      text-align: center;
-      padding: 1rem 0 1.5rem;
-    }
-
-    .logo-row {
-      display: flex;
+    /* ─── INSTALL BANNER ─── */
+    #installBanner {
+      display: none;
+      background: linear-gradient(135deg, #1a2035, #111520);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 0.9rem 1rem;
+      margin-bottom: 1rem;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 0.4rem;
+      gap: 0.75rem;
+    }
+    #installBanner.show { display: flex; }
+    .install-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .install-text { flex: 1; }
+    .install-text strong { display: block; font-size: 0.85rem; color: var(--accent); }
+    .install-text span   { font-size: 0.72rem; color: var(--muted); }
+    .install-btns { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .install-yes {
+      background: var(--accent); color: #0a0c14;
+      border: none; border-radius: 8px;
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.75rem; padding: 0.45rem 0.9rem;
+      cursor: pointer; white-space: nowrap;
+    }
+    .install-no {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.75rem; padding: 0.45rem 0.6rem;
+      cursor: pointer;
     }
 
+    /* ─── OFFLINE BADGE ─── */
+    #offlineBadge {
+      display: none;
+      background: rgba(224,92,92,0.12);
+      border: 1px solid rgba(224,92,92,0.3);
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      margin-bottom: 0.75rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      color: #e05c5c;
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+    #offlineBadge.show { display: block; }
+
+    /* ─── HEADER ─── */
+    header { text-align: center; margin-bottom: 1.5rem; }
+    .logo-row {
+      display: flex; align-items: center;
+      justify-content: center; gap: 0.6rem; margin-bottom: 0.4rem;
+    }
     .logo-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 10px var(--accent);
       animation: pulse 2s infinite;
     }
     @keyframes pulse {
-      0%,100%{ opacity:1; transform:scale(1); }
-      50%    { opacity:0.4; transform:scale(1.5); }
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.5; transform:scale(1.5); }
     }
-
     h1 {
       font-size: clamp(1.6rem, 7vw, 2.6rem);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1;
+      font-weight: 800; letter-spacing: -0.03em; line-height: 1;
     }
     h1 span { color: var(--accent); }
-
     .subtitle {
       font-family: 'Space Mono', monospace;
-      font-size: 0.65rem;
-      color: var(--muted);
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      margin-top: 0.4rem;
+      font-size: clamp(0.58rem, 2.5vw, 0.7rem);
+      color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; margin-top: 0.45rem;
     }
 
-    /* ── Live Clock Strip ── */
+    /* ─── LIVE CLOCKS ─── */
     .live-strip {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.6rem;
-      margin-bottom: 1.5rem;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.6rem; margin-bottom: 1.25rem;
     }
-
+    @media (min-width: 520px) {
+      .live-strip { grid-template-columns: repeat(4, 1fr); }
+    }
     .live-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.85rem 0.9rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      transition: transform 0.2s;
-      -webkit-tap-highlight-color: transparent;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.8rem 0.6rem; text-align: center;
     }
-
-    .live-card .zone-label {
+    .zone-label {
+      font-family: 'Space Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .zone-time {
       font-family: 'Space Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      font-size: clamp(0.82rem, 3.5vw, 1rem); font-weight: 700;
     }
-    .live-card .zone-time {
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(0.95rem, 3.5vw, 1.2rem);
-      font-weight: 700;
-      letter-spacing: -0.01em;
+    .zone-date { font-size: 0.56rem; color: var(--muted); margin-top: 0.2rem; }
+    .dst-badge {
+      display: inline-block; font-family: 'Space Mono', monospace;
+      font-size: 0.5rem; letter-spacing: 0.07em;
+      background: rgba(92,224,184,0.12); color: var(--accent3);
+      border: 1px solid rgba(92,224,184,0.25);
+      padding: 1px 4px; border-radius: 4px; margin-top: 0.3rem;
     }
-    .live-card .zone-date {
-      font-size: 0.6rem;
-      color: var(--muted);
-    }
-    .live-card .dst-pill {
-      display: inline-block;
-      font-family: 'Space Mono', monospace;
-      font-size: 0.52rem;
-      letter-spacing: 0.08em;
-      background: rgba(92,224,184,0.1);
-      color: var(--accent3);
-      border: 1px solid rgba(92,224,184,0.2);
-      padding: 2px 6px;
-      border-radius: 20px;
-      margin-top: 0.2rem;
-      width: fit-content;
-    }
+    .ist-card { border-top: 3px solid var(--ist); }
+    .ist-card .zone-label, .ist-card .zone-time { color: var(--ist); }
+    .est-card { border-top: 3px solid var(--est); }
+    .est-card .zone-label, .est-card .zone-time { color: var(--est); }
+    .cst-card { border-top: 3px solid var(--cst); }
+    .cst-card .zone-label, .cst-card .zone-time { color: var(--cst); }
+    .pst-card { border-top: 3px solid var(--pst); }
+    .pst-card .zone-label, .pst-card .zone-time { color: var(--pst); }
 
-    .ist-card  { border-top: 3px solid var(--ist); }
-    .ist-card  .zone-label, .ist-card .zone-time { color: var(--ist); }
-    .est-card  { border-top: 3px solid var(--est); }
-    .est-card  .zone-label, .est-card .zone-time { color: var(--est); }
-    .cst-card  { border-top: 3px solid var(--cst); }
-    .cst-card  .zone-label, .cst-card .zone-time { color: var(--cst); }
-    .pst-card  { border-top: 3px solid var(--pst); }
-    .pst-card  .zone-label, .pst-card .zone-time { color: var(--pst); }
-
-    /* ── Converter Card ── */
+    /* ─── CONVERTER ─── */
     .converter {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      margin-bottom: 1.25rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1rem; margin-bottom: 1.1rem;
     }
-
-    .section-label {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
+    @media (min-width: 480px) { .converter { padding: 1.6rem 1.4rem; } }
+    .converter-title {
+      font-size: 0.6rem; font-family: 'Space Mono', monospace;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 1.1rem;
     }
-
-    /* Zone selectors row */
     .zone-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.9rem;
     }
-
-    .zone-row .field { flex: 1; min-width: 0; }
-
-    .swap-btn {
-      flex-shrink: 0;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--muted);
-      width: var(--touch-min);
-      height: var(--touch-min);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 1.1rem;
-      transition: all 0.2s;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
+    @media (min-width: 480px) {
+      .zone-row { flex-direction: row; align-items: flex-end; }
+      .zone-row .field { flex: 1; }
     }
-    .swap-btn:active { background: var(--border); color: var(--accent); transform: scale(0.95); }
-
-    .field { display: flex; flex-direction: column; gap: 0.35rem; }
-
+    .field { display: flex; flex-direction: column; gap: 0.32rem; }
     label {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+      font-family: 'Space Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
     }
-
     select, input[type="time"], input[type="date"] {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-family: 'Space Mono', monospace;
-      font-size: 0.88rem;
-      padding: 0 0.85rem;
-      height: var(--touch-min);
-      outline: none;
-      width: 100%;
-      -webkit-appearance: none;
-      appearance: none;
-      cursor: pointer;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Space Mono', monospace; font-size: 16px;
+      min-height: var(--tap); padding: 0 0.85rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%; -webkit-appearance: none; appearance: none; cursor: pointer;
     }
-
+    input[type="time"]::-webkit-date-and-time-value,
+    input[type="date"]::-webkit-date-and-time-value { text-align: left; }
     select:focus, input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(240,180,41,0.1);
+      box-shadow: 0 0 0 3px rgba(240,180,41,0.15);
     }
-
-    /* Custom select arrow */
-    .select-wrap {
-      position: relative;
-    }
+    select option { background: var(--surface2); }
+    .select-wrap { position: relative; }
     .select-wrap::after {
-      content: '▾';
-      position: absolute;
-      right: 0.75rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--muted);
-      pointer-events: none;
-      font-size: 0.75rem;
+      content: '▾'; position: absolute; right: 0.85rem;
+      top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; font-size: 0.75rem;
     }
-    .select-wrap select { padding-right: 2rem; }
-
-    /* Time + Date row */
-    .time-date-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-
-    /* Convert button */
-    .convert-btn {
-      width: 100%;
-      height: var(--touch-min);
-      background: var(--accent);
-      color: #0a0c14;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-family: 'Syne', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      transition: all 0.18s;
+    .swap-row { display: flex; justify-content: center; }
+    @media (min-width: 480px) { .swap-row { align-self: flex-end; } }
+    .arrow-btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--muted);
+      min-width: var(--tap); min-height: var(--tap); padding: 0 1rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      cursor: pointer; font-size: 1rem; transition: all 0.2s;
       -webkit-tap-highlight-color: transparent;
     }
-    .convert-btn:active {
-      background: #f7c948;
-      transform: scale(0.98);
+    .arrow-btn small {
+      font-family: 'Space Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
     }
+    .arrow-btn:active { transform: scale(0.95); background: var(--border); }
+    .time-date-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.7rem; margin-bottom: 1rem;
+    }
+    @media (max-width: 340px) { .time-date-row { grid-template-columns: 1fr; } }
+    .convert-btn {
+      width: 100%; min-height: var(--tap);
+      background: var(--accent); color: #0a0c14;
+      border: none; border-radius: 12px;
+      font-family: 'Syne', sans-serif; font-size: 1rem;
+      font-weight: 700; letter-spacing: 0.04em;
+      cursor: pointer; transition: all 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .convert-btn:active { transform: scale(0.98); opacity: 0.92; }
 
-    /* ── Results ── */
-    .results { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1.1rem; }
-
+    /* ─── RESULTS ─── */
+    .results { display: grid; gap: 0.55rem; margin-top: 1.1rem; }
     .result-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.9rem 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      opacity: 0;
-      transform: translateY(8px);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.85rem 0.9rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+      opacity: 0; transform: translateY(8px);
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
     .result-card.visible { opacity: 1; transform: translateY(0); }
-    .result-card.highlight { border-color: var(--accent); background: rgba(240,180,41,0.05); }
-
-    .result-left { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
-
-    .result-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
+    .result-card.highlight {
+      border-color: rgba(240,180,41,0.45); background: rgba(240,180,41,0.06);
     }
-
+    .result-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .result-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .result-zone {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-wrap: wrap;
+      font-family: 'Space Mono', monospace; font-size: 0.63rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
     }
-
-    .result-name {
-      font-size: 0.62rem;
-      color: var(--muted);
-      margin-top: 0.1rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .result-subtext {
+      font-size: 0.6rem; color: var(--muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
     .result-right { text-align: right; flex-shrink: 0; }
-
     .result-time {
       font-family: 'Space Mono', monospace;
-      font-size: clamp(1rem, 4vw, 1.2rem);
-      font-weight: 700;
+      font-size: clamp(0.9rem, 4vw, 1.05rem); font-weight: 700;
     }
-    .result-24 {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.62rem;
-      color: var(--muted);
-      margin-top: 0.1rem;
-    }
-
-    .badge {
-      display: inline-block;
-      font-family: 'Space Mono', monospace;
-      font-size: 0.5rem;
-      letter-spacing: 0.08em;
-      padding: 2px 5px;
-      border-radius: 4px;
-      vertical-align: middle;
-    }
-    .badge-dst { background: rgba(92,224,184,0.12); color: var(--accent3); border: 1px solid rgba(92,224,184,0.25); }
-    .badge-src { background: rgba(240,180,41,0.12); color: var(--accent); border: 1px solid rgba(240,180,41,0.25); }
-    .badge-day { background: rgba(124,156,255,0.12); color: #7c9cff; border: 1px solid rgba(124,156,255,0.25); }
-
-    /* ── DST Info ── */
-    .info-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent3);
-      border-radius: var(--radius);
-      padding: 1rem 1.1rem;
-      margin-bottom: 1.1rem;
-    }
-    .info-card h3 {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent3);
-      margin-bottom: 0.6rem;
-    }
-    .info-card p {
-      font-size: 0.8rem;
-      color: #9ba3b5;
-      line-height: 1.65;
-    }
-    .info-card strong { color: var(--text); }
-
-    /* ── Offset Table ── */
-    .table-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-    }
-    .table-card h3 {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0.85rem 1rem 0.65rem;
-      border-bottom: 1px solid var(--border);
+    .result-meta { font-size: 0.58rem; color: var(--muted); margin-top: 2px; }
+    .dst-note {
+      display: inline-block; font-family: 'Space Mono', monospace;
+      font-size: 0.48rem; background: rgba(92,224,184,0.1); color: var(--accent3);
+      border: 1px solid rgba(92,224,184,0.22);
+      padding: 1px 5px; border-radius: 4px; margin-left: 0.25rem; vertical-align: middle;
     }
 
-    /* Scrollable on mobile */
+    /* ─── DST INFO ─── */
+    .dst-info {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent3); border-radius: var(--radius);
+      padding: 1rem 1.1rem; margin-bottom: 1.1rem;
+    }
+    .dst-info h3 {
+      font-size: 0.65rem; font-family: 'Space Mono', monospace;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent3); margin-bottom: 0.55rem;
+    }
+    .dst-info p { font-size: 0.78rem; color: #9ba3b5; line-height: 1.65; }
+    .dst-info strong { color: var(--text); }
+
+    /* ─── TABLE ─── */
+    .offset-table {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .offset-table h3 {
+      font-size: 0.63rem; font-family: 'Space Mono', monospace;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+      padding: 0.85rem 1rem 0.65rem; border-bottom: 1px solid var(--border);
+    }
     .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 380px;
-    }
+    table { width: 100%; border-collapse: collapse; min-width: 360px; }
     th, td {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.7rem;
-      padding: 0.6rem 1rem;
-      text-align: left;
-      white-space: nowrap;
+      font-family: 'Space Mono', monospace; font-size: 0.68rem;
+      padding: 0.55rem 1rem; text-align: left; white-space: nowrap;
     }
     th {
-      color: var(--muted);
-      font-size: 0.6rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      background: rgba(255,255,255,0.02);
+      color: var(--muted); font-size: 0.58rem; letter-spacing: 0.1em;
+      text-transform: uppercase; background: rgba(255,255,255,0.02);
     }
     td { border-top: 1px solid var(--border); }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-
-    .zpill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 0.6rem;
-      font-weight: 700;
+    .zone-pill {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 20px; font-size: 0.6rem; font-weight: 700;
     }
 
-    /* ── Footer ── */
+    /* ─── FOOTER ─── */
     footer {
-      text-align: center;
-      font-family: 'Space Mono', monospace;
-      font-size: 0.6rem;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      line-height: 2;
+      text-align: center; font-family: 'Space Mono', monospace;
+      font-size: 0.6rem; color: var(--muted); letter-spacing: 0.08em;
     }
     footer a { color: var(--accent); text-decoration: none; }
-
-    /* ── Responsive tweaks ── */
-    @media (max-width: 400px) {
-      .time-date-row { grid-template-columns: 1fr; }
-      .page { padding: 1rem 0.75rem 5rem; }
-    }
-
-    @media (min-width: 600px) {
-      .live-strip { grid-template-columns: repeat(4, 1fr); }
-      .live-card { padding: 1rem; }
-    }
-
-    @media (min-width: 600px) {
-      select, input[type="time"], input[type="date"] { font-size: 0.95rem; }
-    }
-
-    /* Safe area padding for notched phones */
-    @supports (padding: max(0px)) {
-      .page {
-        padding-left: max(1rem, env(safe-area-inset-left));
-        padding-right: max(1rem, env(safe-area-inset-right));
-        padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 2rem));
-      }
-    }
   </style>
 </head>
 <body>
-<div class="page">
+<div class="wrapper">
+
+  <!-- Install Banner -->
+  <div id="installBanner">
+    <div class="install-icon">📲</div>
+    <div class="install-text">
+      <strong>Install as App</strong>
+      <span>Add to home screen — works offline too!</span>
+    </div>
+    <div class="install-btns">
+      <button class="install-yes" id="installBtn">Install</button>
+      <button class="install-no" id="dismissBtn">✕</button>
+    </div>
+  </div>
+
+  <!-- Offline Badge -->
+  <div id="offlineBadge">⚡ You're offline — app still works!</div>
 
   <!-- Header -->
   <header>
@@ -491,37 +393,35 @@
   <div class="live-strip">
     <div class="live-card ist-card">
       <div class="zone-label">IST</div>
-      <div class="zone-time" id="live-ist">--:--:--</div>
+      <div class="zone-time" id="live-ist">--:--</div>
       <div class="zone-date" id="live-ist-date">—</div>
     </div>
     <div class="live-card est-card">
       <div class="zone-label">EST/EDT</div>
-      <div class="zone-time" id="live-est">--:--:--</div>
+      <div class="zone-time" id="live-est">--:--</div>
       <div class="zone-date" id="live-est-date">—</div>
-      <div class="dst-pill" id="live-est-dst"></div>
+      <div class="dst-badge" id="live-est-dst"></div>
     </div>
     <div class="live-card cst-card">
       <div class="zone-label">CST/CDT</div>
-      <div class="zone-time" id="live-cst">--:--:--</div>
+      <div class="zone-time" id="live-cst">--:--</div>
       <div class="zone-date" id="live-cst-date">—</div>
-      <div class="dst-pill" id="live-cst-dst"></div>
+      <div class="dst-badge" id="live-cst-dst"></div>
     </div>
     <div class="live-card pst-card">
       <div class="zone-label">PST/PDT</div>
-      <div class="zone-time" id="live-pst">--:--:--</div>
+      <div class="zone-time" id="live-pst">--:--</div>
       <div class="zone-date" id="live-pst-date">—</div>
-      <div class="dst-pill" id="live-pst-dst"></div>
+      <div class="dst-badge" id="live-pst-dst"></div>
     </div>
   </div>
 
   <!-- Converter -->
   <div class="converter">
-    <div class="section-label">// Time Converter</div>
-
-    <!-- Zone selectors -->
+    <div class="converter-title">// Time Converter</div>
     <div class="zone-row">
       <div class="field">
-        <label>From</label>
+        <label>From Zone</label>
         <div class="select-wrap">
           <select id="fromZone">
             <option value="IST">IST — India</option>
@@ -531,11 +431,13 @@
           </select>
         </div>
       </div>
-
-      <button class="swap-btn" onclick="swapZones()" title="Swap zones" aria-label="Swap zones">⇄</button>
-
+      <div class="swap-row">
+        <button class="arrow-btn" onclick="swapZones()" title="Swap zones">
+          ⇄ <small>swap</small>
+        </button>
+      </div>
       <div class="field">
-        <label>To</label>
+        <label>To Zone</label>
         <div class="select-wrap">
           <select id="toZone">
             <option value="ALL">All Zones</option>
@@ -547,8 +449,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Time + Date -->
     <div class="time-date-row">
       <div class="field">
         <label>Time</label>
@@ -559,53 +459,47 @@
         <input type="date" id="inputDate"/>
       </div>
     </div>
-
     <button class="convert-btn" onclick="convert()">Convert →</button>
-
     <div class="results" id="results"></div>
   </div>
 
   <!-- DST Info -->
-  <div class="info-card">
-    <h3>⚡ Daylight Saving Time (DST)</h3>
+  <div class="dst-info">
+    <h3>⚡ Daylight Saving Time</h3>
     <p>
-      US clocks <strong>spring forward 1 hour</strong> on the <strong>2nd Sunday of March</strong>
-      and <strong>fall back</strong> on the <strong>1st Sunday of November</strong>.
+      US clocks <strong>spring forward 1 hr</strong> on the <strong>2nd Sunday in March</strong>
+      and <strong>fall back</strong> on the <strong>1st Sunday in November</strong>.
       During DST: EST→EDT (UTC−4), CST→CDT (UTC−5), PST→PDT (UTC−7).
-      <strong>India (IST) never observes DST</strong> and stays at UTC+5:30 all year.
-      The converter auto-detects DST for any date you enter.
+      <strong>India (IST) never observes DST</strong> — always UTC+5:30.
     </p>
   </div>
 
-  <!-- Offset Reference -->
-  <div class="table-card">
+  <!-- Offset Table -->
+  <div class="offset-table">
     <h3>// UTC Offset Reference</h3>
     <div class="table-scroll">
       <table>
         <thead>
           <tr>
-            <th>Zone</th>
-            <th>Standard</th>
-            <th>DST</th>
-            <th>vs IST (Std)</th>
-            <th>vs IST (DST)</th>
+            <th>Zone</th><th>Standard</th><th>DST</th>
+            <th>vs IST (Std)</th><th>vs IST (DST)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><span class="zpill" style="background:rgba(240,180,41,0.15);color:var(--ist)">IST</span></td>
+            <td><span class="zone-pill" style="background:rgba(240,180,41,0.15);color:var(--ist)">IST</span></td>
             <td>UTC+5:30</td><td>No DST</td><td>—</td><td>—</td>
           </tr>
           <tr>
-            <td><span class="zpill" style="background:rgba(92,224,184,0.15);color:var(--est)">EST/EDT</span></td>
+            <td><span class="zone-pill" style="background:rgba(92,224,184,0.15);color:var(--est)">EST/EDT</span></td>
             <td>UTC−5</td><td>UTC−4</td><td>−10:30 h</td><td>−9:30 h</td>
           </tr>
           <tr>
-            <td><span class="zpill" style="background:rgba(124,156,255,0.15);color:var(--cst)">CST/CDT</span></td>
+            <td><span class="zone-pill" style="background:rgba(124,156,255,0.15);color:var(--cst)">CST/CDT</span></td>
             <td>UTC−6</td><td>UTC−5</td><td>−11:30 h</td><td>−10:30 h</td>
           </tr>
           <tr>
-            <td><span class="zpill" style="background:rgba(224,92,92,0.15);color:var(--pst)">PST/PDT</span></td>
+            <td><span class="zone-pill" style="background:rgba(224,92,92,0.15);color:var(--pst)">PST/PDT</span></td>
             <td>UTC−8</td><td>UTC−7</td><td>−13:30 h</td><td>−12:30 h</td>
           </tr>
         </tbody>
@@ -614,171 +508,225 @@
   </div>
 
   <footer>
-    Works offline · No tracking · Pure HTML<br/>
-    <a href="https://pages.github.com" target="_blank" rel="noopener">Host free on GitHub Pages →</a>
+    Works across time zones &nbsp;·&nbsp;
+    <a href="https://pages.github.com" target="_blank">Host free on GitHub Pages</a>
   </footer>
-
 </div>
 
 <script>
-  /* ── DST Helpers ─────────────────────────────────────────── */
-  function getNthSunday(year, month0, n) {
-    let count = 0;
-    for (let d = 1; d <= 31; d++) {
-      const dt = new Date(year, month0, d);
-      if (dt.getMonth() !== month0) break;
-      if (dt.getDay() === 0 && ++count === n) return dt;
-    }
-  }
-
-  function isDST(date) {
-    const y = date.getFullYear();
-    const start = getNthSunday(y, 2, 2); start.setHours(2);  // 2nd Sun Mar
-    const end   = getNthSunday(y, 10, 1); end.setHours(2);   // 1st Sun Nov
-    return date >= start && date < end;
-  }
-
-  /* Offset from UTC in minutes */
-  function getOffset(zone, date) {
-    const base = { IST: 330, EST: -300, CST: -360, PST: -480 };
-    return (zone !== 'IST' && isDST(date)) ? base[zone] + 60 : base[zone];
-  }
-
-  function activeLabel(zone, date) {
-    if (zone === 'IST') return 'IST';
-    const dst = isDST(date);
-    return { EST: dst?'EDT':'EST', CST: dst?'CDT':'CST', PST: dst?'PDT':'PST' }[zone];
-  }
-
-  /* ── Convert ─────────────────────────────────────────────── */
-  function convertTime(timeStr, fromZone, toZone, date) {
-    const [h, m] = timeStr.split(':').map(Number);
-    let mins = h * 60 + m - getOffset(fromZone, date) + getOffset(toZone, date);
-    let dayOff = 0;
-    while (mins < 0)    { mins += 1440; dayOff--; }
-    while (mins >= 1440){ mins -= 1440; dayOff++; }
-    const rh = Math.floor(mins / 60), rm = mins % 60;
-    const hh = String(rh).padStart(2,'0'), mm = String(rm).padStart(2,'0');
-    const ampm = rh < 12 ? 'AM' : 'PM';
-    const h12  = rh % 12 === 0 ? 12 : rh % 12;
-    return {
-      t24: `${hh}:${mm}`,
-      t12: `${h12}:${mm} ${ampm}`,
-      dayOff
-    };
-  }
-
-  /* ── Live Clocks ─────────────────────────────────────────── */
-  const liveCfg = [
-    { id:'ist', tz:'Asia/Kolkata',       zone:'IST' },
-    { id:'est', tz:'America/New_York',   zone:'EST' },
-    { id:'cst', tz:'America/Chicago',    zone:'CST' },
-    { id:'pst', tz:'America/Los_Angeles',zone:'PST' },
-  ];
-
-  function updateLive() {
-    const now = new Date();
-    liveCfg.forEach(z => {
-      const timeStr = now.toLocaleTimeString('en-US', { timeZone:z.tz, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
-      const dateStr = now.toLocaleDateString('en-US', { timeZone:z.tz, weekday:'short', month:'short', day:'numeric' });
-      document.getElementById(`live-${z.id}`).textContent = timeStr;
-      document.getElementById(`live-${z.id}-date`).textContent = dateStr;
-      if (z.zone !== 'IST') {
-        const el = document.getElementById(`live-${z.id}-dst`);
-        const on = isDST(now);
-        el.textContent = on ? activeLabel(z.zone, now) + ' active' : 'Standard time';
-        el.style.color = on ? 'var(--accent3)' : 'var(--muted)';
-        el.style.background = on ? 'rgba(92,224,184,0.1)' : 'rgba(107,114,128,0.1)';
-        el.style.borderColor = on ? 'rgba(92,224,184,0.25)' : 'rgba(107,114,128,0.2)';
-      }
-    });
-  }
-
-  /* ── Result Card Builder ─────────────────────────────────── */
-  const zColor = { IST:'var(--ist)', EST:'var(--est)', CST:'var(--cst)', PST:'var(--pst)' };
-  const zName  = { IST:'India Standard Time', EST:'Eastern US', CST:'Central US', PST:'Pacific US' };
-
-  function makeCard(zone, t24, t12, dayOff, isSource, date) {
-    const lbl = activeLabel(zone, date);
-    const dst = zone !== 'IST' && isDST(date);
-    const card = document.createElement('div');
-    card.className = 'result-card' + (isSource ? ' highlight' : '');
-
-    let dayBadge = '';
-    if (dayOff === 1)  dayBadge = `<span class="badge badge-day">+1 day</span>`;
-    if (dayOff === -1) dayBadge = `<span class="badge badge-day">−1 day</span>`;
-    const dstBadge = dst ? `<span class="badge badge-dst">DST</span>` : '';
-    const srcBadge = isSource ? `<span class="badge badge-src">source</span>` : '';
-
-    card.innerHTML = `
-      <div class="result-left">
-        <div class="result-dot" style="background:${zColor[zone]};box-shadow:0 0 7px ${zColor[zone]}40"></div>
-        <div style="min-width:0">
-          <div class="result-zone" style="color:${zColor[zone]}">${lbl} ${dstBadge}${srcBadge}</div>
-          <div class="result-name">${zName[zone]}</div>
-        </div>
-      </div>
-      <div class="result-right">
-        <div class="result-time" style="color:${zColor[zone]}">${t12} ${dayBadge}</div>
-        <div class="result-24">${t24} (24h)</div>
-      </div>`;
-    return card;
-  }
-
-  /* ── Convert Handler ─────────────────────────────────────── */
-  function convert() {
-    const timeStr  = document.getElementById('inputTime').value || '09:00';
-    const dateStr  = document.getElementById('inputDate').value;
-    const fromZone = document.getElementById('fromZone').value;
-    const toZone   = document.getElementById('toZone').value;
-    const date     = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
-
-    const targets = toZone === 'ALL'
-      ? ['IST','EST','CST','PST'].filter(z => z !== fromZone)
-      : [toZone];
-
-    const container = document.getElementById('results');
-    container.innerHTML = '';
-
-    // Source card
-    const [sh, sm] = timeStr.split(':').map(Number);
-    const ampm = sh < 12 ? 'AM' : 'PM';
-    const h12  = sh % 12 === 0 ? 12 : sh % 12;
-    container.appendChild(makeCard(fromZone, timeStr, `${h12}:${String(sm).padStart(2,'0')} ${ampm}`, 0, true, date));
-
-    targets.forEach((tz, i) => {
-      const r = convertTime(timeStr, fromZone, tz, date);
-      const card = makeCard(tz, r.t24, r.t12, r.dayOff, false, date);
-      card.style.transitionDelay = `${(i+1) * 70}ms`;
-      container.appendChild(card);
-    });
-
-    requestAnimationFrame(() => {
-      container.querySelectorAll('.result-card').forEach(c => c.classList.add('visible'));
-    });
-  }
-
-  function swapZones() {
-    const f = document.getElementById('fromZone');
-    const t = document.getElementById('toZone');
-    if (t.value === 'ALL') return;
-    [f.value, t.value] = [t.value, f.value];
-  }
-
-  /* ── Init ────────────────────────────────────────────────── */
-  const today = new Date();
-  document.getElementById('inputDate').value =
-    `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-
-  updateLive();
-  setInterval(updateLive, 1000);
-  convert();
-
-  /* Auto-convert on any input change */
-  ['fromZone','toZone','inputTime','inputDate'].forEach(id => {
-    document.getElementById(id).addEventListener('change', convert);
+/* ══════════════════════════════════════════════════════════════════
+   SERVICE WORKER REGISTRATION
+══════════════════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
   });
-  document.getElementById('inputTime').addEventListener('input', convert);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INSTALL PROMPT (Android Chrome + Desktop)
+══════════════════════════════════════════════════════════════════ */
+let deferredPrompt = null;
+const banner    = document.getElementById('installBanner');
+const installBtn = document.getElementById('installBtn');
+const dismissBtn = document.getElementById('dismissBtn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  banner.classList.add('show');
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  banner.classList.remove('show');
+});
+
+dismissBtn.addEventListener('click', () => {
+  banner.classList.remove('show');
+  deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  banner.classList.remove('show');
+  console.log('App installed!');
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   OFFLINE DETECTION
+══════════════════════════════════════════════════════════════════ */
+const offlineBadge = document.getElementById('offlineBadge');
+function updateOnlineStatus() {
+  offlineBadge.classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+/* ══════════════════════════════════════════════════════════════════
+   URL PARAMS (for shortcuts)
+══════════════════════════════════════════════════════════════════ */
+function applyURLParams() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('from')) document.getElementById('fromZone').value = p.get('from');
+  if (p.get('to'))   document.getElementById('toZone').value   = p.get('to');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DST LOGIC
+══════════════════════════════════════════════════════════════════ */
+function getNthSunday(y, m, n) {
+  let c = 0;
+  for (let d = 1; d <= 31; d++) {
+    const dt = new Date(y, m, d);
+    if (dt.getMonth() !== m) break;
+    if (dt.getDay() === 0 && ++c === n) return dt;
+  }
+}
+function isDSTActive(date) {
+  const y = date.getFullYear();
+  const s = getNthSunday(y, 2, 2);
+  const e = getNthSunday(y, 10, 1);
+  s.setHours(2); e.setHours(2);
+  return date >= s && date < e;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   OFFSETS & LABELS
+══════════════════════════════════════════════════════════════════ */
+const BASE = { IST:330, EST:-300, CST:-360, PST:-480 };
+function getOffset(z, d) {
+  return (z !== 'IST' && isDSTActive(d)) ? BASE[z]+60 : BASE[z];
+}
+function getLabel(z, d) {
+  if (z === 'IST') return 'IST';
+  const on = isDSTActive(d);
+  return { EST:on?'EDT':'EST', CST:on?'CDT':'CST', PST:on?'PDT':'PST' }[z];
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONVERSION
+══════════════════════════════════════════════════════════════════ */
+function cvt(ts, from, to, date) {
+  const [h,m] = ts.split(':').map(Number);
+  let mins = h*60+m - getOffset(from,date) + getOffset(to,date);
+  let day = 0;
+  while (mins < 0)    { mins += 1440; day--; }
+  while (mins >= 1440) { mins -= 1440; day++; }
+  const rh = Math.floor(mins/60), rm = mins%60;
+  const p = v => String(v).padStart(2,'0');
+  return {
+    t24: `${p(rh)}:${p(rm)}`,
+    t12: `${rh%12||12}:${p(rm)} ${rh<12?'AM':'PM'}`,
+    day
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LIVE CLOCKS
+══════════════════════════════════════════════════════════════════ */
+const CLOCKS = [
+  {id:'ist', tz:'Asia/Kolkata',        z:'IST'},
+  {id:'est', tz:'America/New_York',    z:'EST'},
+  {id:'cst', tz:'America/Chicago',     z:'CST'},
+  {id:'pst', tz:'America/Los_Angeles', z:'PST'},
+];
+function tick() {
+  const now = new Date();
+  CLOCKS.forEach(({id, tz, z}) => {
+    document.getElementById(`live-${id}`).textContent =
+      now.toLocaleTimeString('en-US',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false});
+    document.getElementById(`live-${id}-date`).textContent =
+      now.toLocaleDateString('en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric'});
+    if (z !== 'IST') {
+      const el = document.getElementById(`live-${id}-dst`);
+      const on = isDSTActive(now);
+      el.textContent = on ? getLabel(z,now)+' ✦ DST' : z+' · No DST';
+      el.style.color  = on ? 'var(--accent3)' : 'var(--muted)';
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONVERTER UI
+══════════════════════════════════════════════════════════════════ */
+const COL  = {IST:'var(--ist)',EST:'var(--est)',CST:'var(--cst)',PST:'var(--pst)'};
+const NAME = {IST:'India Standard Time',EST:'Eastern',CST:'Central',PST:'Pacific'};
+
+function convert() {
+  const ts   = document.getElementById('inputTime').value || '09:00';
+  const ds   = document.getElementById('inputDate').value;
+  const from = document.getElementById('fromZone').value;
+  const to   = document.getElementById('toZone').value;
+  const date = ds ? new Date(ds+'T12:00:00') : new Date();
+  const list = to === 'ALL'
+    ? ['IST','EST','CST','PST'].filter(z => z !== from) : [to];
+
+  const box = document.getElementById('results');
+  box.innerHTML = '';
+  box.appendChild(mkCard(from, ts, '', 0, true, date));
+  list.forEach((z, i) => {
+    const r = cvt(ts, from, z, date);
+    const c = mkCard(z, r.t24, r.t12, r.day, false, date);
+    c.style.transitionDelay = `${i*70}ms`;
+    box.appendChild(c);
+  });
+  requestAnimationFrame(() =>
+    box.querySelectorAll('.result-card').forEach(c => c.classList.add('visible'))
+  );
+}
+
+function mkCard(z, t24, t12, day, src, date) {
+  const [hh,mm] = t24.split(':').map(Number);
+  const disp = t12 || `${hh%12||12}:${String(mm).padStart(2,'0')} ${hh<12?'AM':'PM'}`;
+  const dayNote = day===1  ? '<span class="dst-note">+1 day</span>'
+                : day===-1 ? '<span class="dst-note">−1 day</span>' : '';
+  const dstBadge = (z!=='IST' && isDSTActive(date)) ? '<span class="dst-note">DST</span>' : '';
+  const label = getLabel(z, date);
+  const c = document.createElement('div');
+  c.className = 'result-card' + (src ? ' highlight' : '');
+  c.innerHTML = `
+    <div class="result-left">
+      <div class="result-dot" style="background:${COL[z]};box-shadow:0 0 7px ${COL[z]}"></div>
+      <div style="min-width:0">
+        <div class="result-zone" style="color:${COL[z]}">${label} ${dstBadge}</div>
+        <div class="result-subtext">${NAME[z]}${src?' — Source':''}</div>
+      </div>
+    </div>
+    <div class="result-right">
+      <div class="result-time" style="color:${COL[z]}">${disp} ${dayNote}</div>
+      <div class="result-meta">${t24} · 24h</div>
+    </div>`;
+  return c;
+}
+
+function swapZones() {
+  const f = document.getElementById('fromZone');
+  const t = document.getElementById('toZone');
+  if (t.value === 'ALL') return;
+  [f.value, t.value] = [t.value, f.value];
+  convert();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════════ */
+const now = new Date();
+document.getElementById('inputDate').value =
+  `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+['fromZone','toZone','inputTime','inputDate'].forEach(id =>
+  document.getElementById(id).addEventListener('change', convert)
+);
+
+applyURLParams();
+tick(); setInterval(tick, 1000);
+convert();
 </script>
 </body>
 </html>
